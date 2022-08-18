@@ -44,13 +44,13 @@ BMS::BMS(const Mat& src, int dw1, bool nm, bool hb, int colorSpace, bool whiteni
 	if (CL_Lab & colorSpace)
 	{
 		Mat lab;
-		cvtColor(mSrc, lab, CV_RGB2Lab);
+                cvtColor(mSrc, lab, COLOR_RGB2Lab);
 		whitenFeatMap(lab, COV_MAT_REG);
 	}
 	if (CL_Luv & colorSpace)
 	{
 		Mat luv;
-		cvtColor(mSrc, luv, CV_RGB2Luv);
+		cvtColor(mSrc, luv, COLOR_RGB2Luv);
 		whitenFeatMap(luv, COV_MAT_REG);
 	}
 }
@@ -170,7 +170,7 @@ void BMS::whitenFeatMap(const cv::Mat& img, float reg)
 	Mat srcF,meanF,covF;
 	img.convertTo(srcF, CV_32FC3);
 	Mat samples = srcF.reshape(1, img.rows*img.cols);
-	calcCovarMatrix(samples, covF, meanF, CV_COVAR_NORMAL | CV_COVAR_ROWS | CV_COVAR_SCALE, CV_32F);
+	calcCovarMatrix(samples, covF, meanF, COVAR_NORMAL | COVAR_ROWS | COVAR_SCALE, CV_32F);
 
 	covF += Mat::eye(covF.rows, covF.cols, CV_32FC1)*reg;
 	SVD svd(covF);
