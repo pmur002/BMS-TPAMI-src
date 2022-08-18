@@ -134,7 +134,11 @@ cv::Mat BMS::getAttentionMap(const cv::Mat& bm, int dilation_width_1,
     }
 	
     ret = ret != 1;
-	
+
+    // save activation maps
+    name = rmExtension(img_name) + "-activation.png";
+    imwrite(name, ret);
+
     Mat map1, map2;
     map1 = ret & bm;
     map2 = ret & (~bm);
