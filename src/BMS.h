@@ -40,7 +40,7 @@ static cv::RNG BMS_RNG;
 class BMS
 {
 public:
-	BMS (const cv::Mat& src, int dw1, bool nm, bool hb, int colorSpace, bool whitening);
+	BMS (const cv::Mat& src, int dw1, bool nm, bool hb, int colorSpace, bool whitening, const std::string out_path, const std::string file_name);
 	cv::Mat getSaliencyMap();
 	void computeSaliency(double step);
 private:
@@ -48,6 +48,8 @@ private:
 	int mAttMapCount;
 	cv::Mat mBorderPriorMap;
 	cv::Mat mSrc;
+        std::string _out_path;
+        std::string _file_name;
 	std::vector<cv::Mat> mFeatureMaps;
 	int mDilationWidth_1;
 	bool mHandleBorder;

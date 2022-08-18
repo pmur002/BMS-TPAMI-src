@@ -27,15 +27,19 @@
 #include <cmath>
 #include <ctime>
 
+#include "fileGettor.h"
+
 using namespace cv;
 using namespace std;
 
 #define COV_MAT_REG 50.0f
 
-BMS::BMS(const Mat& src, int dw1, bool nm, bool hb, int colorSpace, bool whitening)
+BMS::BMS(const Mat& src, int dw1, bool nm, bool hb, int colorSpace, bool whitening, const string out_path, const string file_name)
 :mDilationWidth_1(dw1), mNormalize(nm), mHandleBorder(hb), mAttMapCount(0), mColorSpace(colorSpace), mWhitening(whitening)
 {
 	mSrc=src.clone();
+        _out_path = out_path;
+        _file_name = file_name;
 	mSaliencyMap = Mat::zeros(src.size(), CV_32FC1);
 	mBorderPriorMap = Mat::zeros(src.size(), CV_32FC1);
 
@@ -160,7 +164,8 @@ void BMS::whitenFeatMap(const cv::Mat& img, float reg)
 		split(img, featureMaps);
 		for (int i = 0; i < featureMaps.size(); i++)
 		{
-			normalize(featureMaps[i], featureMaps[i], 255.0, 0.0, NORM_MINMAX);
+			normalize(featureMaps[i], featureMaps[i], 255.0, 0.0, 
+                                  NORM_MINMAX);
 			medianBlur(featureMaps[i], featureMaps[i], 3);
 			mFeatureMaps.push_back(featureMaps[i]);
 		}
@@ -170,7 +175,8 @@ void BMS::whitenFeatMap(const cv::Mat& img, float reg)
 	Mat srcF,meanF,covF;
 	img.convertTo(srcF, CV_32FC3);
 	Mat samples = srcF.reshape(1, img.rows*img.cols);
-	calcCovarMatrix(samples, covF, meanF, COVAR_NORMAL | COVAR_ROWS | COVAR_SCALE, CV_32F);
+	calcCovarMatrix(samples, covF, meanF,
+                        COVAR_NORMAL | COVAR_ROWS | COVAR_SCALE, CV_32F);
 
 	covF += Mat::eye(covF.rows, covF.cols, CV_32FC1)*reg;
 	SVD svd(covF);
@@ -185,9 +191,20 @@ void BMS::whitenFeatMap(const cv::Mat& img, float reg)
 
 	for (int i = 0; i < featureMaps.size(); i++)
 	{
-		normalize(featureMaps[i], featureMaps[i], 255.0, 0.0, NORM_MINMAX);
+		normalize(featureMaps[i], featureMaps[i], 255.0, 0.0, 
+                          NORM_MINMAX);
 		featureMaps[i].convertTo(featureMaps[i], CV_8U);
 		medianBlur(featureMaps[i], featureMaps[i], 3);
 		mFeatureMaps.push_back(featureMaps[i]);
+                // save the (whitened) Lab components
+                if (i == 0)
+                    imwrite(_out_path + rmExtension(_file_name) + "-L.png", 
+                            featureMaps[i]);
+                else if (i == 1) 
+                    imwrite(_out_path + rmExtension(_file_name) + "-a.png", 
+                            featureMaps[i]);
+                else 
+                    imwrite(_out_path + rmExtension(_file_name) + "-b.png",
+                            featureMaps[i]);
 	}
 }

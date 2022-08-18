@@ -78,27 +78,53 @@ void doWork(
 		float w = (float)src.cols, h = (float)src.rows;
 		float maxD = max(w,h);
 		if (max_dimension < 0)
-			resize(src,src_small,Size((int)(MAX_IMG_DIM*w/maxD),(int)(MAX_IMG_DIM*h/maxD)),0.0,0.0,INTER_AREA);// standard: width: 600 pixel
+                    // standard: width: 600 pixel
+                    resize(src, src_small, 
+                           Size((int)(MAX_IMG_DIM*w/maxD), 
+                                (int)(MAX_IMG_DIM*h/maxD)),
+                           0.0, 0.0, INTER_AREA);
 		else
-			resize(src, src_small, Size((int)(max_dimension*w / maxD), (int)(max_dimension*h / maxD)), 0.0, 0.0, INTER_AREA);
+                    resize(src, src_small, 
+                           Size((int)(max_dimension*w / maxD), 
+                                (int)(max_dimension*h / maxD)), 
+                           0.0, 0.0, INTER_AREA);
 
+                // save the resized image
+                imwrite(out_path + rmExtension(file_list[i]) + "-small.png",
+                        src_small);
 
 		/* Computing saliency */
 		ttt=clock();
 
-		BMS bms(src_small, dilation_width_1, use_normalize, handle_border, colorSpace, whitening);
+		BMS bms(src_small, dilation_width_1, use_normalize, 
+                        handle_border, colorSpace, whitening, 
+                        out_path, file_list[i]);
 		bms.computeSaliency((double)sample_step);
 		
 		Mat result=bms.getSaliencyMap();
 
+                // save the raw saliency map
+		imwrite(out_path + rmExtension(file_list[i]) + 
+                        "-saliency-raw.png",
+                        result);
+
 		/* Post-processing */
 
-		if (dilation_width_2 > 0)
-			dilate(result, result, Mat(), Point(-1, -1), dilation_width_2);
-		if (blur_std > 0)
-		{
+		if (dilation_width_2 > 0) {
+			dilate(result, result, Mat(), Point(-1, -1), 
+                               dilation_width_2);
+                        // save the dilated saliency map
+                        imwrite(out_path + rmExtension(file_list[i]) + 
+                                "-saliency-dilated.png",
+                                result);
+                }
+		if (blur_std > 0) {
 			int blur_width = (int)MIN(floor(blur_std) * 4 + 1, 51);
-			GaussianBlur(result, result, Size(blur_width, blur_width), blur_std, blur_std);
+			GaussianBlur(result, result, 
+                                     Size(blur_width, blur_width), 
+                                     blur_std, blur_std);
+                        // This is the final saliency map
+                        // (which gets saved at the end)
 		}
 
 		
@@ -110,7 +136,8 @@ void doWork(
 
 		/* Save the saliency map*/
 		resize(result,result,src.size());
-		imwrite(out_path+rmExtension(file_list[i])+".png",result);		
+		imwrite(out_path + rmExtension(file_list[i]) + 
+                        "-saliency-final.png", result);
 	}
 	cout << "average_time: " << avg_time / file_list.size() << endl;
 }
