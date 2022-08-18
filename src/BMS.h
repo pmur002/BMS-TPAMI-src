@@ -56,7 +56,7 @@ private:
 	bool mNormalize;
 	bool mWhitening;
 	int mColorSpace;
-	cv::Mat getAttentionMap(const cv::Mat& bm, int dilation_width_1, bool toNormalize, bool handle_border);
+	cv::Mat getAttentionMap(const cv::Mat& bm, int dilation_width_1, bool toNormalize, bool handle_border, const std::string img_name);
 	void whitenFeatMap(const cv::Mat& img, float reg);
 	void computeBorderPriorMap(float reg, float marginRatio);
 };

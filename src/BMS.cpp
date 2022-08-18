@@ -59,90 +59,119 @@ BMS::BMS(const Mat& src, int dw1, bool nm, bool hb, int colorSpace, bool whiteni
 	}
 }
 
-void BMS::computeSaliency(double step)
-{
-	for (int i=0;i<mFeatureMaps.size();++i)
-	{
-		Mat bm;
-		double max_,min_;
-		minMaxLoc(mFeatureMaps[i],&min_,&max_);
-		for (double thresh = min_; thresh < max_; thresh += step)
-		{
-			bm=mFeatureMaps[i]>thresh;
-			Mat am = getAttentionMap(bm, mDilationWidth_1, mNormalize, mHandleBorder);
-			mSaliencyMap += am;
-			mAttMapCount++;
-		}
-	}
+void BMS::computeSaliency(double step) {
+    string channel, img_name;
+    char thresh_str[10];
+    for (int i=0;i<mFeatureMaps.size();++i) {
+        switch(i) { 
+        case 0:  channel = "L"; break;
+        case 1:  channel = "a"; break;
+        case 2:  channel = "b"; break;
+        }
+        Mat bm;
+        double max_,min_;
+        minMaxLoc(mFeatureMaps[i],&min_,&max_);
+        for (double thresh = min_; thresh < max_; thresh += step) {
+            sprintf(thresh_str, "%03.0f", round(thresh));
+            bm = mFeatureMaps[i] > thresh;
+            img_name = _out_path + rmExtension(_file_name) + "-" + 
+                channel + "-" + thresh_str + ".png";
+            imwrite(img_name, bm);            
+            Mat am = getAttentionMap(bm, mDilationWidth_1, 
+                                     mNormalize, mHandleBorder,
+                                     img_name);
+            mSaliencyMap += am;
+            mAttMapCount++;
+        }
+    }
 }
 
 
-cv::Mat BMS::getAttentionMap(const cv::Mat& bm, int dilation_width_1, bool toNormalize, bool handle_border) 
-{
-	Mat ret=bm.clone();
-	int jump;
-	if (handle_border)
-	{
-		for (int i=0;i<bm.rows;i++)
-		{
-			jump= BMS_RNG.uniform(0.0,1.0)>0.99 ? BMS_RNG.uniform(5,25):0;
-			if (ret.at<uchar>(i,0+jump)!=1)
-				floodFill(ret,Point(0+jump,i),Scalar(1),0,Scalar(0),Scalar(0),8);
-			jump = BMS_RNG.uniform(0.0,1.0)>0.99 ?BMS_RNG.uniform(5,25):0;
-			if (ret.at<uchar>(i,bm.cols-1-jump)!=1)
-				floodFill(ret,Point(bm.cols-1-jump,i),Scalar(1),0,Scalar(0),Scalar(0),8);
-		}
-		for (int j=0;j<bm.cols;j++)
-		{
-			jump= BMS_RNG.uniform(0.0,1.0)>0.99 ? BMS_RNG.uniform(5,25):0;
-			if (ret.at<uchar>(0+jump,j)!=1)
-				floodFill(ret,Point(j,0+jump),Scalar(1),0,Scalar(0),Scalar(0),8);
-			jump= BMS_RNG.uniform(0.0,1.0)>0.99 ? BMS_RNG.uniform(5,25):0;
-			if (ret.at<uchar>(bm.rows-1-jump,j)!=1)
-				floodFill(ret,Point(j,bm.rows-1-jump),Scalar(1),0,Scalar(0),Scalar(0),8);
-		}
-	}
-	else
-	{
-		for (int i=0;i<bm.rows;i++)
-		{
-			if (ret.at<uchar>(i,0)!=1)
-				floodFill(ret,Point(0,i),Scalar(1),0,Scalar(0),Scalar(0),8);
-			if (ret.at<uchar>(i,bm.cols-1)!=1)
-				floodFill(ret,Point(bm.cols-1,i),Scalar(1),0,Scalar(0),Scalar(0),8);
-		}
-		for (int j=0;j<bm.cols;j++)
-		{
-			if (ret.at<uchar>(0,j)!=1)
-				floodFill(ret,Point(j,0),Scalar(1),0,Scalar(0),Scalar(0),8);
-			if (ret.at<uchar>(bm.rows-1,j)!=1)
-				floodFill(ret,Point(j,bm.rows-1),Scalar(1),0,Scalar(0),Scalar(0),8);
-		}
-	}
+cv::Mat BMS::getAttentionMap(const cv::Mat& bm, int dilation_width_1, 
+                             bool toNormalize, bool handle_border,
+                             string img_name) {
+    string name;
+    Mat ret=bm.clone();
+    int jump;
+    if (handle_border) {
+        for (int i=0;i<bm.rows;i++) {
+            jump = BMS_RNG.uniform(0.0,1.0)>0.99 ? BMS_RNG.uniform(5,25):0;
+            if (ret.at<uchar>(i,0+jump) != 1)
+                floodFill(ret, Point(0+jump,i), Scalar(1), 0, 
+                          Scalar(0), Scalar(0), 8);
+            jump = BMS_RNG.uniform(0.0,1.0) > 0.99 ?BMS_RNG.uniform(5,25):0;
+            if (ret.at<uchar>(i,bm.cols-1-jump) != 1)
+                floodFill(ret, Point(bm.cols-1-jump,i), Scalar(1), 0,
+                          Scalar(0), Scalar(0), 8);
+        }
+        for (int j=0;j<bm.cols;j++) {
+            jump = BMS_RNG.uniform(0.0,1.0)>0.99 ? BMS_RNG.uniform(5,25):0;
+            if (ret.at<uchar>(0+jump,j) != 1)
+                floodFill(ret, Point(j,0+jump), Scalar(1), 0,
+                          Scalar(0), Scalar(0), 8);
+            jump = BMS_RNG.uniform(0.0,1.0) > 0.99 ? BMS_RNG.uniform(5,25):0;
+            if (ret.at<uchar>(bm.rows-1-jump,j) != 1)
+                floodFill(ret, Point(j,bm.rows-1-jump), Scalar(1), 0,
+                          Scalar(0), Scalar(0), 8);
+        }
+    } else {
+        for (int i=0;i<bm.rows;i++) {
+            if (ret.at<uchar>(i,0) != 1)
+                floodFill(ret, Point(0,i), Scalar(1), 0,
+                          Scalar(0), Scalar(0), 8);
+            if (ret.at<uchar>(i,bm.cols-1) != 1)
+                floodFill(ret, Point(bm.cols-1,i), Scalar(1), 0,
+                          Scalar(0), Scalar(0), 8);
+        }
+        for (int j=0;j<bm.cols;j++) {
+            if (ret.at<uchar>(0,j) !=1 )
+                floodFill(ret, Point(j,0), Scalar(1), 0,
+                          Scalar(0), Scalar(0), 8);
+            if (ret.at<uchar>(bm.rows-1,j) != 1)
+                floodFill(ret, Point(j,bm.rows-1), Scalar(1), 0,
+                          Scalar(0), Scalar(0), 8);
+        }
+    }
 	
-	ret = ret != 1;
+    ret = ret != 1;
 	
-	Mat map1, map2;
-	map1 = ret & bm;
-	map2 = ret & (~bm);
+    Mat map1, map2;
+    map1 = ret & bm;
+    map2 = ret & (~bm);
 
-	if (dilation_width_1 > 0)
-	{
-		dilate(map1, map1, Mat(), Point(-1, -1), dilation_width_1);
-		dilate(map2, map2, Mat(), Point(-1, -1), dilation_width_1);
-	}
+    // save attention maps
+    name = rmExtension(img_name) + "-attention-1.png";
+    imwrite(name, map1);
+    name = rmExtension(img_name) + "-attention-2.png";
+    imwrite(name, map2);
+
+    if (dilation_width_1 > 0) {
+        dilate(map1, map1, Mat(), Point(-1, -1), dilation_width_1);
+        dilate(map2, map2, Mat(), Point(-1, -1), dilation_width_1);
+    }
+
+    // save dilated attention map
+    name = rmExtension(img_name) + "-attention-1-dilated.png";
+    imwrite(name, map1);
+    name = rmExtension(img_name) + "-attention-2-dilated.png";
+    imwrite(name, map2);
 		
-	map1.convertTo(map1,CV_32FC1);
-	map2.convertTo(map2,CV_32FC1);
+    map1.convertTo(map1,CV_32FC1);
+    map2.convertTo(map2,CV_32FC1);
+    
+    if (toNormalize) {
+        normalize(map1, map1, 1.0, 0.0, NORM_L2);
+        normalize(map2, map2, 1.0, 0.0, NORM_L2);
+    } else
+        normalize(ret,ret,0.0,1.0,NORM_MINMAX);
 
-	if (toNormalize)
-	{
-		normalize(map1, map1, 1.0, 0.0, NORM_L2);
-		normalize(map2, map2, 1.0, 0.0, NORM_L2);
-	}
-	else
-		normalize(ret,ret,0.0,1.0,NORM_MINMAX);
-	return map1+map2;
+    // save normalised attention map
+    name = rmExtension(img_name) + "-attention-1-normal.png";
+    imwrite(name, map1);
+    name = rmExtension(img_name) + "-attention-2-normal.png";
+    imwrite(name, map2);
+
+    return map1+map2;
 }
 
 Mat BMS::getSaliencyMap()
