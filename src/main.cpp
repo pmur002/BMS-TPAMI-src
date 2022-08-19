@@ -74,6 +74,8 @@ void doWork(
 
 		/* Preprocessing */
 		Mat src=imread(in_path+file_list[i]);
+                // save image as PNG
+                imwrite(out_path + rmExtension(file_list[i]) + ".png", src);
 		Mat src_small;
 		float w = (float)src.cols, h = (float)src.rows;
 		float maxD = max(w,h);
