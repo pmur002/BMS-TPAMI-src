@@ -57,6 +57,13 @@ BMS::BMS(const Mat& src, int dw1, bool nm, bool hb, int colorSpace, bool whiteni
 		cvtColor(mSrc, luv, COLOR_RGB2Luv);
 		whitenFeatMap(luv, COV_MAT_REG);
 	}
+        // log the attention map maxima
+        _logL1.open(out_path + rmExtension(file_name) + "-L1.log");
+        _loga1.open(out_path + rmExtension(file_name) + "-a1.log");
+        _logb1.open(out_path + rmExtension(file_name) + "-b1.log");
+        _logL2.open(out_path + rmExtension(file_name) + "-L2.log");
+        _loga2.open(out_path + rmExtension(file_name) + "-a2.log");
+        _logb2.open(out_path + rmExtension(file_name) + "-b2.log");
 }
 
 void BMS::computeSaliency(double step) {
@@ -79,7 +86,7 @@ void BMS::computeSaliency(double step) {
             imwrite(img_name, bm);            
             Mat am = getAttentionMap(bm, mDilationWidth_1, 
                                      mNormalize, mHandleBorder,
-                                     img_name);
+                                     img_name, channel);
             mSaliencyMap += am;
             mAttMapCount++;
         }
@@ -89,7 +96,7 @@ void BMS::computeSaliency(double step) {
 
 cv::Mat BMS::getAttentionMap(const cv::Mat& bm, int dilation_width_1, 
                              bool toNormalize, bool handle_border,
-                             string img_name) {
+                             string img_name, string channel) {
     string name;
     Mat ret=bm.clone();
     int jump;
@@ -170,10 +177,35 @@ cv::Mat BMS::getAttentionMap(const cv::Mat& bm, int dilation_width_1,
         normalize(ret,ret,0.0,1.0,NORM_MINMAX);
 
     // save normalised attention map
+    Mat norm = map1.clone();
+    normalize(norm,norm,255.0,0.0,NORM_MINMAX);
+    norm.convertTo(norm, CV_8UC1);
     name = rmExtension(img_name) + "-attention-1-normal.png";
-    imwrite(name, map1);
+    imwrite(name, norm);
+    // Save actual maximum so can rescale 
+    double min, max;
+    minMaxIdx(map1, &min, &max, NULL, NULL);
+    if (channel == "L") {
+        _logL1 << name << "," << max << endl;
+    } else if (channel == "a") {
+        _loga1 << name << "," << max << endl;
+    } else {
+        _logb1 << name << "," << max << endl;
+    }
+
+    norm = map2.clone();
+    normalize(norm,norm,255.0,0.0,NORM_MINMAX);
+    norm.convertTo(norm, CV_8UC1);
     name = rmExtension(img_name) + "-attention-2-normal.png";
-    imwrite(name, map2);
+    imwrite(name, norm);
+    minMaxIdx(map2, &min, &max, NULL, NULL);
+    if (channel == "L") {
+        _logL2 << name << "," << max << endl;
+    } else if (channel == "a") {
+        _loga2 << name << "," << max << endl;
+    } else {
+        _logb2 << name << "," << max << endl;
+    }
 
     return map1+map2;
 }

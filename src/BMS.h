@@ -50,13 +50,17 @@ private:
 	cv::Mat mSrc;
         std::string _out_path;
         std::string _file_name;
+        std::ofstream _logL1, _loga1, _logb1, _logL2, _loga2, _logb2;
 	std::vector<cv::Mat> mFeatureMaps;
 	int mDilationWidth_1;
 	bool mHandleBorder;
 	bool mNormalize;
 	bool mWhitening;
 	int mColorSpace;
-	cv::Mat getAttentionMap(const cv::Mat& bm, int dilation_width_1, bool toNormalize, bool handle_border, const std::string img_name);
+	cv::Mat getAttentionMap(const cv::Mat& bm, int dilation_width_1, 
+                                bool toNormalize, bool handle_border, 
+                                const std::string img_name, 
+                                const std::string channel);
 	void whitenFeatMap(const cv::Mat& img, float reg);
 	void computeBorderPriorMap(float reg, float marginRatio);
 };
